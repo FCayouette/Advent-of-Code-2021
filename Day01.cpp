@@ -2,6 +2,21 @@
 #include <fstream>
 #include <deque>
 #include <numeric>
+#include <array>
+#include <vector>
+#include <algorithm>
+
+template <typename T, size_t SIZE>
+struct SlidingWindow
+{
+    void Insert(T val)
+    {
+        if (index >= SIZE and data[index % SIZE] < val) ++count;
+        data[index++ % SIZE] = val;
+    }
+    std::array<T, SIZE> data = {};
+    size_t index = 0, count = 0;
+};
 
 int main(int argc, char* argv[])
 {
@@ -18,28 +33,16 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    int i, previous, prevWindow = -1, part1 = 0, part2 = 0;
-    std::deque<int> slidingWindow;
-    in >> previous;
-    slidingWindow.push_back(previous);
+    SlidingWindow<int, 1> Part1;
+    SlidingWindow<int, 3> Part2;
+
+    int i;
     while (in >> i)
     {
-        if (previous < i)
-            ++part1;
-        previous = i;
-        
-        slidingWindow.push_back(i);
-        if (slidingWindow.size() > 3)
-            slidingWindow.pop_front();
-        if (slidingWindow.size() == 3)
-        {
-            int curr = std::accumulate(slidingWindow.cbegin(), slidingWindow.cend(), 0);
-            if (prevWindow != -1 && curr > prevWindow)
-                ++part2;
-            prevWindow = curr;
-        }
+        Part1.Insert(i);
+        Part2.Insert(i);
     }
     
-    std::cout << "Part 1: " << part1 << "\nPart 2: " << part2 << std::endl;
+    std::cout << "Part 1: " << Part1.count << "\nPart 2: " << Part2.count << std::endl;
     return 0;
 }
