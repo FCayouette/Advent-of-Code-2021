@@ -2,7 +2,10 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <list>
+#include <algorithm>
+
+#define ALL(x) (x).begin(),(x).end()
+#define ALLc(x) (x).cbegin(),(x).cend()
 
 int main(int argc, char* argv[])
 {
@@ -19,76 +22,46 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    size_t values = 0;
-    std::vector<int> counts;
+    std::vector<size_t> counts;
     std::string s;
-    std::list<std::string> oxygen, co2;
+    std::vector<std::string> o2, co2;
     while (in >> s)
     {
         if (counts.size() == 0)
-        {
             counts.resize(s.size());
-        }
         for (int i = 0; i < s.size(); ++i)
             if (s[i] == '1') counts[i]++;
-        ++values;
-        oxygen.push_back(s);
+        o2.push_back(s);
         co2.push_back(s);
     }
 
-    int part1a = 0, part1b = 0;
-    for (int c : counts)
+    size_t part1a = 0, part1b = 0;
+    for (size_t c : counts)
     {
         part1a *= 2;
         part1b *= 2;
-        if (c >= values / 2)
+        if (c >= o2.size() / 2)
             ++part1a;
         else
             ++part1b;
     }
-    std::cout << "Part 1: " << part1a*part1b << std::endl;
+    std::cout << "Part 1: " << part1a * part1b << std::endl;
 
-    auto Count = [](const std::list<std::string>& l, size_t index)
+    for (size_t i = 0; i < s.size(); ++i)
     {
-        std::pair<int, int> result(0, 0);
-        for (const std::string& s : l)
+        auto OneCounter = [i](const std::string& s) { return s[i] == '1'; };
+        if (o2.size() > 1)
         {
-            if (s[index] == '0')
-                ++result.first;
-            else
-                ++result.second;
-        }
-        return result;
-    };
-
-    auto KeepOnly = [](std::list<std::string>& l, size_t index, char c)
-    {
-        for (auto iter = l.begin(); iter != l.end();)
-        {
-            if ((*iter)[index] != c)
-                iter = l.erase(iter);
-            else
-                ++iter;
-        }
-    };
-
-    for (int i = 0; i < s.size(); ++i)
-    {
-        if (oxygen.size() > 1)
-        {
-            auto count = Count(oxygen, i);
-            char keep = count.second >= count.first ? '1' : '0';
-            KeepOnly(oxygen, i, keep);
+            size_t count = std::count_if(ALLc(o2), OneCounter);
+            o2.erase(std::remove_if(ALL(o2), [i, keep = count >= o2.size() - count ? '1' : '0'](const std::string& s) { return s[i] != keep; }), o2.end());
         }
         if (co2.size() > 1)
         {
-            auto count = Count(co2, i);
-            char keep = count.second >= count.first ? '0' : '1';
-            KeepOnly(co2, i, keep);
+            size_t count = std::count_if(ALLc(co2), OneCounter);
+            co2.erase(std::remove_if(ALL(co2), [i, keep = count >= co2.size() - count ? '0' : '1'](const std::string& s) { return s[i] != keep; }), co2.end());
         }
     }
-
-    std::cout << "Part 2: " << std::stoi(oxygen.front(), nullptr, 2) * std::stoi(co2.front(), nullptr, 2) << std::endl;
+    std::cout << "Part 2: " << std::stoi(o2[0], nullptr, 2) * std::stoi(co2[0], nullptr, 2) << std::endl;
 
     return 0;
 }
