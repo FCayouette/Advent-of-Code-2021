@@ -53,8 +53,7 @@ int main(int argc, char* argv[])
         {
             int dist = std::abs(i - p);
             tmp1 += dist;
-            if (dist)
-                tmp2 += dist * (dist - 1) / 2;
+            tmp2 += dist * (dist + 1) / 2;
         }
         part1 = std::min(part1, tmp1);
         part2 = std::min(part2, tmp2);
