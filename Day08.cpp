@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <array>
-#include <numeric>
 #include <algorithm>
 
 #define ALLc(x) (x).cbegin(),(x).cend()
@@ -13,7 +12,7 @@ int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
-        std::cout << "Day07.exe inputfilename" << std::endl;
+        std::cout << "Day08.exe inputfilename" << std::endl;
         return -1;
     }
 
@@ -35,11 +34,7 @@ int main(int argc, char* argv[])
     }
 
     int part1 = 0, part2 = 0;
-    auto CountPart1 = [&part1](size_t p)
-    {
-        if (p >= 2 && p <= 4 || p == 7)
-            ++part1;
-    };
+    auto CountPart1 = [&part1](size_t p) { part1 += (p >= 2 && p <= 4 || p == 7); };
 
     for (const auto& p : inOuts)
     {
@@ -81,43 +76,39 @@ int main(int argc, char* argv[])
         }
 
         char topRight, bottomRight;
-        for (auto s : split)
-            if (s.size() == 6)
+        
+        split.erase(std::remove_if(ALL(split), [&topRight, &bottomRight, &sortedKeys](const std::string& s) {
+            if (s.size() != 6) return false;
+            if (s.find(sortedKeys[1][0]) == std::string::npos)
             {
-                if (s.find(sortedKeys[1][0]) == std::string::npos)
-                {
-                    sortedKeys[6] = s;
-                    topRight = sortedKeys[1][0];
-                    bottomRight = sortedKeys[1][1];
-                }
-                else if (s.find(sortedKeys[1][1]) == std::string::npos)
-                {
-                    sortedKeys[6] = s;
-                    topRight = sortedKeys[1][1];
-                    bottomRight = sortedKeys[1][0];
-                }
+                sortedKeys[6] = s;
+                topRight = sortedKeys[1][0];
+                bottomRight = sortedKeys[1][1];
             }
+            else if (s.find(sortedKeys[1][1]) == std::string::npos)
+            {
+                sortedKeys[6] = s;
+                topRight = sortedKeys[1][1];
+                bottomRight = sortedKeys[1][0];
+            }
+            else
+            {
+                for (char c : sortedKeys[4])
+                    if (s.find(c) == std::string::npos)
+                    {
+                        sortedKeys[0] = s;
+                        return true;
+                    }
+                sortedKeys[9] = s;
+            }
+            return true; }), split.end());
 
         for (const auto& s : split)
-            if (s.size() == 5)
-            {
-                if (s.find(bottomRight) != std::string::npos)
-                    sortedKeys[s.find(topRight) != std::string::npos ? 3 : 5] = s;
-                else sortedKeys[2] = s;
-            }
-
-        for (auto s : split)
-            if (s.size() == 6 && s != sortedKeys[6])
-            {
-                bool nine = true;
-                for (char c : s)
-                    if (c != topRight && sortedKeys[5].find(c) == std::string::npos)
-                    {
-                        nine = false;
-                        break;
-                    }
-                sortedKeys[nine ? 9 : 0] = s;
-            }
+        {
+            if (s.find(bottomRight) != std::string::npos)
+                sortedKeys[s.find(topRight) != std::string::npos ? 3 : 5] = s;
+            else sortedKeys[2] = s;
+        }
 
         int output = 0;
         auto PushNum = [&output, &sortedKeys](std::string s)
