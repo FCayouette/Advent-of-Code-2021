@@ -16,34 +16,31 @@ struct AstarVal
 
 int FindPath(Matrix& matrix)
 {
-    int result = -matrix[0][0];
-
-    size_t rows = matrix.size(), cols = matrix.front().size();
-    size_t target = cols * rows - 1;
+    int p00 = matrix[0][0];
+    const size_t rows = matrix.size(), cols = matrix.front().size(), target = cols * rows - 1;
     constexpr int computed = -1;
 
     std::priority_queue<AstarVal, std::vector<AstarVal>, std::greater<AstarVal>> queue;
-    int part1 = -matrix[0][0], part2 = part1, min = 1;
-    queue.emplace(0, matrix[0][0], (cols + rows - 2) * min);
+    queue.emplace(0, matrix[0][0], (cols + rows - 2));
     while (!queue.empty())
     {
         AstarVal val = queue.top();
         queue.pop();
         if (val.pos == target)
-            return (int)val.cost + result;
+            return (int)val.cost - p00;
         size_t y = val.pos / cols, x = val.pos % cols;
         if (matrix[y][x] == computed)
             continue;
         matrix[y][x] = computed;
 
         if (x > 0 && matrix[y][x - 1] != computed)
-            queue.emplace(val.pos - 1, matrix[y][x - 1] + val.cost, val.estimatedCost + min);
+            queue.emplace(val.pos - 1, matrix[y][x - 1] + val.cost, val.estimatedCost + 1);
         if (y > 0 && matrix[y - 1][x] != computed)
-            queue.emplace(val.pos - cols, matrix[y - 1][x] + val.cost, val.estimatedCost + min);
+            queue.emplace(val.pos - cols, matrix[y - 1][x] + val.cost, val.estimatedCost + 1);
         if (x + 1 < cols && matrix[y][x + 1] != computed)
-            queue.emplace(val.pos + 1, matrix[y][x + 1] + val.cost, val.estimatedCost - min);
+            queue.emplace(val.pos + 1, matrix[y][x + 1] + val.cost, val.estimatedCost - 1);
         if (y + 1 < rows && matrix[y + 1][x] != computed)
-            queue.emplace(val.pos + cols, matrix[y + 1][x] + val.cost, val.estimatedCost - min);
+            queue.emplace(val.pos + cols, matrix[y + 1][x] + val.cost, val.estimatedCost - 1);
     }
     return 0;
 }
