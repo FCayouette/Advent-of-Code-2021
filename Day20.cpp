@@ -1,12 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <vector>
-#include <algorithm>
-
-#define ALLc(x) (x).cbegin(), (x).cend()
-
-constexpr int PAD = 100;
+#include <unordered_set>
 
 int main(int argc, char* argv[])
 {
@@ -25,55 +20,62 @@ int main(int argc, char* argv[])
 
     std::string decode, s;
     in >> decode;
+    bool blinking = (decode.front() == '#' && decode.back() == '.');
     
-    std::string largeString(300, '.');
+    struct PairHash { size_t operator()(const std::pair<int, int>& p) const { return (p.first + 50ll) * 256ll + p.second + 50ll; } };
+    std::unordered_set<std::pair<int, int>, PairHash> litPoints, work;
 
-    std::vector<std::string> work, largeImage(3*PAD, largeString);
-    int row = PAD;
+    int maxY = -1, minX = 0, minY = 0, maxX;
     while (in >> s)
     {
-        for (int i = 0; i < s.size(); ++i)
-            largeImage[row][i + PAD] = s[i];
-        ++row;
+        ++maxY;
+        for (int x = 0; x < s.size(); ++x)
+            if (s[x] == '#')
+                litPoints.insert({ x, maxY });
+        maxX = s.size()-1;
     }
-    work = largeImage;
 
-    auto WithinImage = [](int x, int y) {
-        return 0 <= x && x < 3*PAD && 0 <= y && y < 3*PAD;
-    };
-
-    auto Count = [&largeImage]()
-    {
-        int count = 0;
-        for (const std::string& s : largeImage)
-            count += std::count(ALLc(s), '#');
-        return count;
-    };
+    auto Within = [&minX, &maxX, &minY, &maxY](int x, int y) { return minX <= x && x <= maxX && minY <= y && y <= maxY; };
 
     for (int it = 0; it < 50; ++it)
     {
         if (it == 2)
-            std::cout << "Part 1: " << Count() << std::endl;
-        for (int i = 0; i < 3*PAD; ++i)
-            for (int j = 0; j < 3*PAD; ++j)
+            std::cout << "Part 1: " << litPoints.size();
+
+        --minX; --minY; ++maxX; ++maxY;
+        if (blinking && (it % 2 == 1))
+        {
+            for (int i = minX; i <= maxX; ++i)
+            {
+                litPoints.insert({ i, minY });
+                litPoints.insert({ i, maxY });
+            }
+            for (int i = minY; i <= maxY; ++i)
+            {
+                litPoints.insert({ minX, i });
+                litPoints.insert({ maxX, i });
+            }
+        }
+        
+        for (int x = minX; x <= maxX; ++x)
+            for (int y = minY; y <= maxY; ++y)
             {
                 int index = 0;
-                for (int x = -1; x < 2; ++x)
-                    for (int y = -1; y < 2; ++y)
+                for (int j = -1; j < 2; ++j)
+                    for (int i = -1; i < 2; ++i)
                     {
                         index *= 2;
-                        int a = i + x, b = j + y;
-                        if (WithinImage(a, b))
-                            index += (largeImage[a][b] == '#') ? 1 : 0;
-                        else
-                            index += it % 2;
+                        int nx = x + i, ny = y + j;
+                        if (Within(nx, ny)) index += litPoints.find({ nx, ny }) != litPoints.cend();
+                        else index += (blinking && (it % 2 == 1));
                     }
-
-                work[i][j] = decode[index];
+                if (decode[index] == '#')
+                    work.insert({ x,y });
             }
-        std::swap(work, largeImage);
+        std::swap(litPoints, work);
+        work.clear();
     }
+    std::cout << "\nPart 2: " << litPoints.size() << std::endl;
 
-    std::cout <<"Part 2: " << Count() << std::endl;
     return 0;
 }
