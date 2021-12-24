@@ -8,15 +8,15 @@
 int Evaluate(const std::string& startState, const std::string& target)
 {
     constexpr std::array<int, 7> validTopPos{ 0, 1, 3, 5, 7, 9, 10 };
-    constexpr std::array<int, 4> roomsIndex = { 2, 4, 6, 8 }, typeCosts = { 1, 10, 100, 1000 };
+    constexpr std::array<int, 4> roomIndex = { 2, 4, 6, 8 }, typeCosts = { 1, 10, 100, 1000 };
     using CostState = std::pair<int, std::string>;
     std::unordered_set<std::string> evaluatedStates;
     std::priority_queue<CostState, std::vector<CostState>, std::greater<CostState>> toEvaluate;
 
-    auto MoveToRoom = [&roomsIndex, &typeCosts](const std::string& state, int pos) -> CostState
+    auto MoveToRoom = [&roomIndex, &typeCosts](const std::string& state, int pos) -> CostState
     {
         char type = state[pos];
-        int target = roomsIndex[type - 'A'], work = pos, cost = 0;
+        int target = roomIndex[type - 'A'], work = pos, cost = 0;
         do
         {
             work += (pos > target) ? -1 : 1;
@@ -38,10 +38,11 @@ int Evaluate(const std::string& startState, const std::string& target)
         return { typeCosts[type - 'A'] * cost, newState };
     };
 
-    auto MoveFromRoomTo = [&typeCosts](const std::string& state, int from, int to) -> CostState
+    auto MoveFromRoomTo = [&typeCosts, &roomIndex](const std::string& state, int from, int to) -> CostState
     {
         char type = state[from];
         int cost = 0, work = from;
+        
         while (work > 10)
         {
             work -= 11;
@@ -49,6 +50,14 @@ int Evaluate(const std::string& startState, const std::string& target)
             if (state[work] != '.')
                 return { 0, "" };
         }
+        bool canMove = false;
+        char target = 'A' + std::distance(roomIndex.cbegin(), std::find(roomIndex.cbegin(), roomIndex.cend(), work));
+        for (int i = work + 11; i < state.size(); i += 11)
+            if (state[i] != '.' && state[i] != target)
+                canMove = true;
+        if (!canMove)
+            return { 0, "" };
+
         while (work != to)
         {
             work += (work < to ? 1 : -1);
@@ -65,11 +74,9 @@ int Evaluate(const std::string& startState, const std::string& target)
 
     while (!toEvaluate.empty())
     {
-        const CostState cs = toEvaluate.top();
-        const int baseCost = cs.first;
-        const std::string& baseState = cs.second;
+        auto [baseCost, baseState] = toEvaluate.top();
         toEvaluate.pop();
-        if (cs.second == target)
+        if (baseState == target)
             return baseCost;
 
         if (auto [_, s] = evaluatedStates.insert(baseState);
@@ -81,17 +88,14 @@ int Evaluate(const std::string& startState, const std::string& target)
                 if (auto [cost, newState] = MoveToRoom(baseState, pos);
                     cost > 0)
                     toEvaluate.push({ cost + baseCost, newState });
-        int work = 11;
-        while (work < baseState.size())
-        {
-            for (int delta : roomsIndex)
+        int work = 0;
+        while ((work += 11) < baseState.size())
+            for (int delta : roomIndex)
                 if (baseState[work + delta] != '.')
                     for (int targetPos : validTopPos)
                         if (auto [cost, newState] = MoveFromRoomTo(baseState, work + delta, targetPos);
                             cost > 0)
                             toEvaluate.push({ cost + baseCost, newState });
-            work += 11;
-        }
     }
     return -1;
 }
