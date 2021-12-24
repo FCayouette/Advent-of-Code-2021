@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
-        std::cout << "Day23.exe inputfilename" << std::endl;
+        std::cout << "Day24.exe inputfilename" << std::endl;
         return -1;
     }
 
