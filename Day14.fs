@@ -9,23 +9,20 @@ let InitialCount (init:string) =
     let pairs = Array.pairwise cArray |> Array.countBy(id) |> Array.fold(fun (map:Map<(char * char), int64>) (x,count) -> map.Add(x, (int64)count)) (Map[])
     (counts, pairs)
 
-let AddToCount (map:Map<char, int64>) (a, count) = 
+let AddToMap (map:Map<'a, 'b>) (a, count) = 
     if None <> map.TryFind(a) then map.Add(a, count + map.[a]) else map.Add(a, count)
 
-let AddToPairs (map:Map<char*char, int64>) (a,count) =
-    if None<>map.TryFind(a) then map.Add(a, count + map.[a]) else map.Add(a, count)
-
-let ProcessPair ((counts:Map<char, int64>), (pairs:Map<char*char, int64>), (table:Map<char*char, char>)) pair delta =
+let ProcessPair ((counts:Map<'a, 'b>), (pairs:Map<'a*'a, 'b>), (table:Map<'a*'a, 'a>)) pair delta =
     let c = table.[pair]
-    let newCounts = AddToCount counts (c, delta)
-    let newPairs = AddToPairs (AddToPairs pairs ((fst pair, c), delta)) ((c, snd pair), delta)
+    let newCounts = AddToMap counts (c, delta)
+    let newPairs = AddToMap (AddToMap pairs ((fst pair, c), delta)) ((c, snd pair), delta)
     (newCounts, newPairs, table)
 
-let Polymerize ((counts:Map<char, int64>), (pairs:Map<char*char, int64>)) table =
+let Polymerize ((counts:Map<'a, 'b>), (pairs:Map<'a*'a, 'b>)) table =
     let (newC, newP, newT) = Map.fold(ProcessPair) (counts, (Map[]), table) pairs
     (newC, newP)
 
-let Count (map:Map<char, int64>) =
+let Count (map:Map<'a, int64>) =
     let (min, max) = Map.fold(fun (m, M) _ c -> (min m c, max M c)) (System.Int64.MaxValue,0L) map
     max - min
 
