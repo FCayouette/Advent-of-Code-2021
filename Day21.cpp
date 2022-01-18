@@ -2,8 +2,7 @@
 #include <fstream>
 #include <string>
 #include <array>
-#include <algorithm>
-#include <map>
+#include <unordered_map>
 
 using i64 = long long;
 
@@ -23,82 +22,74 @@ int main(int argc, char* argv[])
     }
 
     std::string s;
+    int pos1, pos2, score1 = 0, score2 = 0, dice = 1, rolls = 0, p1, p2, s1, s2;
 
-    int pos1, pos2, score1 = 0, score2 = 0, dice = 1, rolls = 0, p1, p2;
+    in >> s >> pos1 >> s >> s >> pos1 >> s >> pos2 >> s >> s >> pos2;
 
-    in >> s >> pos1 >> s >> s >> pos1;
-    in >> s >> pos2 >> s >> s >> pos2;
-
-    p1 = pos1;
-    p2 = pos2;
-
-    auto Roll3 = [&dice, &rolls]()
-    {
-        int result = 0;
-        for (int i = 0; i < 3; ++i)
-        {
-            result += dice++;
-            if (dice > 100)
-                dice = 1;
-        }
-        rolls += 3;
-        return result;
-    };
+    p1 = --pos1;
+    p2 = --pos2;
 
     bool player1 = true;
     while (score1 < 1000 && score2 < 1000)
     {
-        int delta = Roll3();
+        int delta = 3*dice + 3;
+        dice = (dice + 3) % 10;
+        ++rolls;
         if (player1)
         {
             pos1 = (pos1 + delta) % 10;
-            score1 += (!pos1 ? 10 : pos1);
+            score1 += pos1 + 1;
         }
         else
         {
             pos2 = (pos2 + delta) % 10;
-            score2 += (!pos2 ? 10 : pos2);
+            score2 += pos2 + 1;
         }
         player1 = !player1;
     }
 
-    std::cout << "Part 1: " << std::min(score1, score2) * rolls;
+    std::cout << "Part 1: " << std::min(score1, score2) * rolls * 3;
     
-    using State = std::pair<std::pair<int, int>, std::pair<int, int>>;
+    using State = std::tuple<int, int, int, int>;
+    struct HashState
+    {
+        size_t operator()(const State& s) const
+        {
+            int a, b, c, d;
+            std::tie(a, b, c, d) = s;
+            return (((a * 32ll) + b) * 32ll + c) * 32ll + d;
+        }
+    };
     
-    std::array<std::pair<int, i64>, 7> deltas = { std::make_pair(3,1ll), {4,3ll}, {5,6ll}, {6,7ll}, {7,6ll}, {8,3ll}, {9,1ll} };
+    std::array<std::pair<int, i64>, 7> deltas = { std::make_pair(3,1ll), {4,3}, {5,6}, {6,7}, {7,6}, {8,3}, {9,1} };
     
     i64 wins1 = 0, wins2 = 0;
-
-    std::map<State, i64> counts, work;
+    std::unordered_map<State, i64, HashState> counts, work;
     player1 = true;
-    counts[{ {0, 0}, { p1,p2 }}] = 1ll;
+    counts[std::make_tuple(0, 0, p1, p2)] = 1ll;
     while (!counts.empty())
     {
-        if (player1)
-            for (const auto& d : deltas)
-                for (const auto& s : counts)
+        for (const auto& [roll, occ] : deltas)
+            for (const auto& [s, count] : counts)
+            {
+                std::tie(s1, s2, p1, p2) = s;
+                if (player1)
                 {
-                    State newState = s.first;
-                    newState.second.first = (d.first + newState.second.first) % 10;
-                    newState.first.first += (!newState.second.first ? 10 : newState.second.first);
-                    if (newState.first.first >= 21)
-                        wins1 += d.second * s.second;
-                    else
-                        work[newState] += s.second * d.second;
+                    p1 = (roll + p1) % 10;
+                    if ((s1 += p1 + 1) >= 21)
+                    {
+                        wins1 += occ * count;
+                        continue;
+                    }
                 }
-        else
-            for (const auto& d : deltas)
-                for (const auto& s : counts)
+                else if (p2 = (roll + p2) % 10;
+                    (s2 += p2 + 1) >= 21)
                 {
-                    State newState = s.first;
-                    newState.second.second = (d.first + newState.second.second) % 10;
-                    newState.first.second += (!newState.second.second ? 10 : newState.second.second);
-                    if (newState.first.second >= 21)
-                        wins2 += d.second * s.second;
-                    else
-                        work[newState] += s.second * d.second;
+                    wins2 += occ * count;
+                    continue;
                 }
+                work[std::make_tuple(s1, s2, p1, p2)] += count * occ;
+            }
         std::swap(work, counts);
         work.clear();
         player1 = !player1;
