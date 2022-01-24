@@ -30,33 +30,41 @@ int main(int argc, char* argv[])
         ++result;
         for (std::string& row : map)
         {
-            std::string work = row;
-            for (int i = 0; i < row.size(); ++i)
-
-                if (row[i] == '>' && row[(i + 1) % row.size()] == '.')
+            char r0 = row[0]; 
+            int i = 1;
+            for (; i < row.size(); ++i)
+                if (row[i-1] == '>' && row[i] == '.')
                 {
-                    std::swap(work[i], work[(i + 1) % row.size()]);
+                    std::swap(row[i-1], row[i]);
                     ++moveCount;
+                    ++i;
                 }
-            row = work;
+            if (i == row.size() && row[i - 1] == '>' && r0 == '.')
+            {
+                ++moveCount;
+                std::swap(row[i - 1], row[0]);
+            }
         }
 
         for (int i = 0; i < map.front().size(); ++i)
         {
-            std::string work = "";
-            for (const std::string& s : map)
-                work += s[i];
-            for (int j = 0; j < map.size(); ++j)
-                if (map[j][i] == 'v' && map[(j + 1) % map.size()][i] == '.')
+            char m0 = map[0][i];
+            int j = 1;
+            for (; j < map.size(); ++j)
+                if (map[j-1][i] == 'v' && map[j][i] == '.')
                 {
-                    std::swap(work[j], work[(j + 1) % map.size()]);
+                    std::swap(map[j-1][i], map[j][i]);
                     ++moveCount;
+                    ++j;
                 }
-            for (int j = 0; j < work.size(); ++j)
-                map[j][i] = work[j];
+            if (j == map.size() && map.back()[i] == 'v' && m0 == '.')
+            {
+                std::swap(map.back()[i], map.front()[i]);
+                ++moveCount;
+            }
         }
     } while (moveCount);
-    
+
     std::cout << "Result: " << result << std::endl;
     return 0;
 }
